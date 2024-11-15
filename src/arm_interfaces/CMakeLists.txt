@@ -12,6 +12,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/PosUpdate.srv"
+  "srv/ServoUpdate.srv"
 )
 
 ament_package()

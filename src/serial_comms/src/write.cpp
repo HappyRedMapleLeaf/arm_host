@@ -1,5 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
-#include "arm_interfaces/srv/pos_update.hpp" // so why ON EARTH IS IT pos_update instead of posupdate or PosUpdate??? WHO ASKED IT TO ADD AN UNDERSCORE
+#include "arm_interfaces/srv/servo_update.hpp"
 
 #include <cstdlib>
 #include <memory>
@@ -16,10 +16,6 @@
 
 int serial_port;
 
-double x = 29.9;
-double y = -147;
-double z = 38.2;
-
 void sigterm_handler(int signum) {
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Interrupt signal (%d) received.", signum);
     close(serial_port);
@@ -27,29 +23,23 @@ void sigterm_handler(int signum) {
     exit(signum);
 }
 
-void change_pos(const std::shared_ptr<arm_interfaces::srv::PosUpdate::Request>  request,
-                      std::shared_ptr<arm_interfaces::srv::PosUpdate::Response> response)
-{
-    x += request->dx;
-    y += request->dy;
-    z += request->dz;
+void change_pos(const std::shared_ptr<arm_interfaces::srv::ServoUpdate::Request>  request,
+                      std::shared_ptr<arm_interfaces::srv::ServoUpdate::Response> response) {
 
-    double data[4];
-    data[0] = x;
-    data[1] = y;
-    data[2] = z;
-    data[3] = 0.0;  // unused byte
+    double data[8];
+    data[0] = 0x01; // command: set servo angles
+    for (int i = 0; i < 7; i++) {
+        data[i+1] = request->servo_angles[i];
+    }
 
-    write(serial_port, data, 32);
+    write(serial_port, data, 64);
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "data written");
 
-    response->new_x = x;
-    response->new_y = y;
-    response->new_z = z;
-
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "request: dx=%f, dy=%f, dz=%f", request->dx, request->dy, request->dz);
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "response: [%f, %f, %f]", response->new_x, response->new_y, response->new_z);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "request: 0=%f, 1=%f, 2=%f, 3=%f, 4=%f, 5=%f, 6=%f", 
+        request->servo_angles[0], request->servo_angles[1], request->servo_angles[2], request->servo_angles[3],
+        request->servo_angles[4], request->servo_angles[5], request->servo_angles[6]);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "response: %d", response->success);
 }
 
 int main(int argc, char **argv) {
@@ -68,8 +58,8 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("write");
 
-    rclcpp::Service<arm_interfaces::srv::PosUpdate>::SharedPtr service =
-        node->create_service<arm_interfaces::srv::PosUpdate>("key_teleop_srv", &change_pos);
+    rclcpp::Service<arm_interfaces::srv::ServoUpdate>::SharedPtr service =
+        node->create_service<arm_interfaces::srv::ServoUpdate>("servo_set_srv", &change_pos);
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Ready...");
 

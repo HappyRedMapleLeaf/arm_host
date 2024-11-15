@@ -15,3 +15,8 @@ Sometimes the device randomly detaches itself but it still shows up with `lsusb`
 `read` node prints any data received from the microcontroller. It uses printf because it works for now. This might break things later.
 `write` sends data to update the desired position based on requests sent to its server
 `key_teleop` sends requests to update the desired position based on keystrokes
+
+## Setting up ROS
+`colcon build` creates build, install, and log directories
+`source install/setup.sh` to be able to run nodes
+Added .vscode directory since intellisense was giving some problems and the current configuration fixes it
