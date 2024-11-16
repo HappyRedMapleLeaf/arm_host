@@ -22,11 +22,15 @@ ament_target_dependencies(write rclcpp arm_interfaces)
 add_executable(key_teleop src/key_teleop.cpp)
 ament_target_dependencies(key_teleop rclcpp arm_interfaces)
 
+add_executable(servo_set src/servo_set.cpp)
+ament_target_dependencies(servo_set rclcpp arm_interfaces)
+
 install(TARGETS
   serial_setup
   read
   write
   key_teleop
+  servo_set
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

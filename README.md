@@ -4,7 +4,7 @@ https://learn.microsoft.com/en-us/windows/wsl/connect-usb
 1. open powershell with admin
 2. `usbipd list` and find busid (format %d-%d)
 3. `usbipd bind --busid <busid>`
-4. `usbipd attach --busid <busid>` (on the second, etc. time around, if plugged into the same port, you just have to do this)
+4. `usbipd attach --wsl --busid <busid>` (on the second, etc. time around, if plugged into the same port, you just have to do this)
 5. verify in wsl that it's there by running `lsusb`
 6. detatch with `usbipd detach --busid <busid>` in powershell
 
@@ -20,3 +20,7 @@ Sometimes the device randomly detaches itself but it still shows up with `lsusb`
 `colcon build` creates build, install, and log directories
 `source install/setup.sh` to be able to run nodes
 Added .vscode directory since intellisense was giving some problems and the current configuration fixes it
+
+`ros2 run serial_comms read` to print output from stm
+`ros2 run serial_comms write` to write whenever requested
+`ros2 run serial_comms servo_set` to set servo position with keyboard

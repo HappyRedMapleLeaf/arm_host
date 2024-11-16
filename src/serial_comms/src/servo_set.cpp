@@ -12,20 +12,21 @@
 #include <csignal>
 
 #include <map>
+#include <algorithm>
 
 #include <chrono>
 using namespace std::chrono_literals;
 
-std::array<double, 7> servo_angles = {0, 0, 0, 0, 0, 0, 0};
+std::array<double, 7> servo_angles = {0, M_PI_2, M_PI_2, 0, 0, 0, 0};
 
 std::array<std::pair<double, double>, 7> limits = {
-    {{0.0, 2*M_PI/3},
-     {-M_PI_4, M_PI},
+    {{0.0,     3*M_PI/2},
+     {0,       M_PI},
      {-M_PI_4, 5*M_PI/4},
      {-M_PI_2, M_PI_2},
      {-M_PI_2, M_PI_2},
      {-M_PI_2, M_PI_2},
-     {0, M_PI}}
+     {-M_PI_2, M_PI_2}}
 };
 
 std::map<char, std::pair<uint8_t, uint8_t>> moveBindings
@@ -70,6 +71,16 @@ int main(int argc, char **argv) {
 
         if (key != EOF && moveBindings.count(key) == 1) {
             auto request = std::make_shared<arm_interfaces::srv::ServoUpdate::Request>();
+
+            uint8_t servo_idx = moveBindings[key].first;
+
+            if (moveBindings[key].second) {
+                servo_angles[servo_idx] += 1*M_PI/180;
+            } else {
+                servo_angles[servo_idx] -= 1*M_PI/180;
+            }
+
+            servo_angles[servo_idx] = std::clamp(servo_angles[servo_idx], limits[servo_idx].first, limits[servo_idx].second);
 
             request->servo_angles = servo_angles;
 
