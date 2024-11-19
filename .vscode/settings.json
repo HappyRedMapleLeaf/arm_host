@@ -70,7 +70,8 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "typeindex": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "bitset": "cpp"
     },
     "python.autoComplete.extraPaths": [
         "/home/hrml/arm_host/install/arm_interfaces/local/lib/python3.10/dist-packages",
