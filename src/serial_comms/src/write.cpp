@@ -39,10 +39,7 @@ void change_pos(const std::shared_ptr<arm_interfaces::srv::ServoUpdate::Request>
     for (int i = 0; i < 7; i++) {
         write_data[i+1] = request->servo_angles[i];
     }
-
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "data prepared: 0=%f, 1=%f, 2=%f, 3=%f, 4=%f, 5=%f, 6=%f", 
-        request->servo_angles[0], request->servo_angles[1], request->servo_angles[2], request->servo_angles[3],
-        request->servo_angles[4], request->servo_angles[5], request->servo_angles[6]);
+    
     new_data = true;
     response->success = true;
 }
@@ -66,14 +63,18 @@ int main(int argc, char **argv) {
     rclcpp::Service<arm_interfaces::srv::ServoUpdate>::SharedPtr service =
         node->create_service<arm_interfaces::srv::ServoUpdate>("servo_set_srv", &change_pos);
 
+    // uint64_t last_updated = node->now().nanoseconds() / 1000000;
+
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Ready...");
 
     // Create a timer to limit the write rate
-    auto timer = node->create_wall_timer(50ms, []() {
+    auto timer = node->create_wall_timer(20ms, [&]() {
         if (new_data) {
             write(serial_port, write_data, 64);
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "data written");
             new_data = false;
+            // uint64_t now = node->now().nanoseconds() / 1000000;
+            // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%lu", now - last_updated);
+            // last_updated = now;
         }
     });
 

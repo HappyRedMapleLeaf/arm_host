@@ -2,19 +2,19 @@
 #include <math.h>
 #include <chrono>
 
-Limits limits = {
-    {{0.0,     3*M_PI/2},
-     {0,       M_PI},
-     {-M_PI_4, 5*M_PI/4},
-     {-M_PI_2, M_PI_2},
-     {-M_PI_2, M_PI_2},
-     {-M_PI_2, M_PI_2}}
+const Limits limits = {
+    {{0.0,       3*M_PI/2},
+     {0,         M_PI},
+     {-M_PI_4,   5*M_PI/4},
+     {-3*M_PI_4, 3*M_PI_4},
+     {-M_PI_2,   M_PI_2},
+     {-M_PI_2,   M_PI_2}}
 };
 
 int main() {
-    Pose3 pose = Pose3(Vec3(200, -45, 60), RotationMatrix(Vec3(-M_PI_2, 0, -M_PI_2)));
+    Pose3 pose = Pose3(Vec3(200, 60, 60), RotationMatrix(Vec3(-M_PI_2, -M_PI, 0)));
 
-    std::cout << RotationMatrix(Vec3(-M_PI_2, 0, -M_PI_2)) << std::endl << std::endl;
+    std::cout << pose << std::endl << std::endl;
 
     // time the below function
     // auto start = std::chrono::high_resolution_clock::now();

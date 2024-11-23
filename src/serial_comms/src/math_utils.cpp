@@ -42,6 +42,15 @@ Mat3 Mat3::mul(Mat3 other) {
     }
     return Mat3(result);
 }
+Mat3 Mat3::transpose() {
+    std::array<std::array<double, 3>, 3> result{};
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            result[i][j] = this->data[j][i];
+        }
+    }
+    return Mat3(result);
+}
 std::array<double, 3> & Mat3::operator[](int i) {
     return data[i];
 }

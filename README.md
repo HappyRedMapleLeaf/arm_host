@@ -24,3 +24,6 @@ Added .vscode directory since intellisense was giving some problems and the curr
 `ros2 run serial_comms read` to print output from stm
 `ros2 run serial_comms write` to write whenever requested
 `ros2 run serial_comms servo_set` to set servo position with keyboard
+
+## Dependencies
+sudo apt-get install libncurses5-dev libncursesw5-dev

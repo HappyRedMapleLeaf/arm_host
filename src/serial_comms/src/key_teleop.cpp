@@ -1,61 +1,132 @@
 #include "rclcpp/rclcpp.hpp"
-#include "arm_interfaces/srv/pos_update.hpp" // so why ON EARTH IS IT pos_update instead of posupdate or PosUpdate??? WHO ASKED IT TO ADD AN UNDERSCORE
-
-#include <cstdlib>
-#include <memory>
-#include <stdio.h>
-#include <string.h>
-
-#include <unistd.h>
-#include <termios.h>
-
-#include <csignal>
-
-#include <map>
+#include "arm_interfaces/srv/servo_update.hpp"
+#include "kinematics.h"
 
 #include <chrono>
 using namespace std::chrono_literals;
 
-std::map<char, std::vector<float>> moveBindings
-{
-  {'q', {5.0, 0.0, 0.0}},
-  {'a', {-5.0, 0.0, 0.0}},
-  {'w', {0.0, 5.0, 0.0}},
-  {'s', {0.0, -5.0, 0.0}},
-  {'e', {0.0, 0.0, 5.0}},
-  {'d', {0.0, 0.0, -5.0}}
-};
+#include <ncurses.h>
 
-void sigterm_handler(int signum) {
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Interrupt signal (%d) received.", signum);
-    rclcpp::shutdown();
-    exit(signum);
-}
 
+void sigterm_handler(int signum);
 int main(int argc, char **argv);
-int getch();
+
 
 int main(int argc, char **argv) {
     signal(SIGINT, sigterm_handler);
-
     rclcpp::init(argc, argv);
 
     std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("key_teleop");
-    rclcpp::Client<arm_interfaces::srv::PosUpdate>::SharedPtr client =
-    node->create_client<arm_interfaces::srv::PosUpdate>("key_teleop_srv");
+    rclcpp::Client<arm_interfaces::srv::ServoUpdate>::SharedPtr client =
+    node->create_client<arm_interfaces::srv::ServoUpdate>("servo_set_srv");
+
+    // Initialize ncurses
+    initscr();
+    cbreak();
+    noecho();
+    timeout(0); // Non-blocking input
+    keypad(stdscr, TRUE);
+
+    Pose3 current_pose{Vec3(140, 60, 40), RotationMatrix(Vec3(-M_PI_2, -M_PI, 0))};
+    Angles angles{};
+    double claw_angle = 0.0;
+    uint64_t last_updated = node->now().nanoseconds() / 1000000;
+
+    const double linear_speed = 2.0;                  // mm
+    const double rotate_speed = M_PI/180.0 * 2;       // rad
+    const double claw_speed = M_PI/180.0 * 5;         // rad
+    const Limits limits = {
+        {{0.0,       3*M_PI/2},
+        {0,         M_PI},
+        {-M_PI_4,   5*M_PI/4},
+        {-3*M_PI_4, 3*M_PI_4},
+        {-M_PI_2,   M_PI_2},
+        {-M_PI_2,   M_PI_2}}
+    };
     
     while (rclcpp::ok()) {
-        int key = getch();
+        uint64_t milliseconds = node->now().nanoseconds() / 1000000;
 
-        if (key != EOF && moveBindings.count(key) == 1) {
-            auto request = std::make_shared<arm_interfaces::srv::PosUpdate::Request>();
-            request->dx = moveBindings[key][0];
-            request->dy = moveBindings[key][1];
-            request->dz = moveBindings[key][2];
+        if (milliseconds - last_updated > 20) {
+            int32_t key = getch();
 
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sending request");
+            Pose3 oldpose = current_pose;
 
-            while (!client->wait_for_service(1s)) {
+            bool changed = true;
+
+            switch (key) {
+                case 'q':
+                    current_pose.pos.x += linear_speed;
+                    break;
+                case 'a':
+                    current_pose.pos.x -= linear_speed;
+                    break;
+                case 'w':
+                    current_pose.pos.y += linear_speed;
+                    break;
+                case 's':
+                    current_pose.pos.y -= linear_speed;
+                    break;
+                case 'e':
+                    current_pose.pos.z += linear_speed;
+                    break;
+                case 'd':
+                    current_pose.pos.z -= linear_speed;
+                    break;
+                case 'r':
+                    current_pose.dir = RotationMatrix(Vec3( rotate_speed, 0, 0)).mul(current_pose.dir);
+                    break;
+                case 'f':
+                    current_pose.dir = RotationMatrix(Vec3(-rotate_speed, 0, 0)).mul(current_pose.dir);
+                    break;
+                case 't':
+                    current_pose.dir = RotationMatrix(Vec3(0,  rotate_speed, 0)).mul(current_pose.dir);
+                    break;
+                case 'g':
+                    current_pose.dir = RotationMatrix(Vec3(0, -rotate_speed, 0)).mul(current_pose.dir);
+                    break;
+                case 'y':
+                    current_pose.dir = RotationMatrix(Vec3(0, 0,  rotate_speed)).mul(current_pose.dir);
+                    break;
+                case 'h':
+                    current_pose.dir = RotationMatrix(Vec3(0, 0, -rotate_speed)).mul(current_pose.dir);
+                    break;
+                case 'u':
+                    claw_angle += claw_speed;
+                    break;
+                case 'j':
+                    claw_angle -= claw_speed;
+                    break;
+                default:
+                    changed = false;
+                    break;
+            }
+
+            if (changed) {
+                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "New xyz: [%f, %f, %f]", 
+                //     current_pose.pos.x, current_pose.pos.y, current_pose.pos.z
+                // );
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "c");
+            }
+
+            claw_angle = std::clamp(claw_angle, -M_PI_2, M_PI_2);
+
+            bool success = InvKin(current_pose, limits, angles);
+
+            if (!success) {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Destination out of range");
+                current_pose = oldpose;
+                continue;
+            }
+
+            auto request = std::make_shared<arm_interfaces::srv::ServoUpdate::Request>();
+
+            for (int i = 0; i < 6; i++) {
+                request->servo_angles[i] = angles[i];
+            }
+            request->servo_angles[6] = claw_angle;
+
+            while (!client->wait_for_service(20ms)) {
                 if (!rclcpp::ok()) {
                     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
                     return 0;
@@ -64,31 +135,22 @@ int main(int argc, char **argv) {
             }
 
             auto result = client->async_send_request(request);
-            // Wait for the result.
-            if (rclcpp::spin_until_future_complete(node, result) ==
-                rclcpp::FutureReturnCode::SUCCESS)
-            {
-                auto result_print = result.get();
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "New position: [%f, %f, %f]", result_print->new_x, result_print->new_y, result_print->new_z);
-            } else {
+
+            // Wait for result
+            if (rclcpp::spin_until_future_complete(node, result) != rclcpp::FutureReturnCode::SUCCESS) {
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service write_server");
             }
         }
     }
 
+    endwin();
     rclcpp::shutdown();
     return 0;
 }
 
-int getch() {
-    static struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt); // save old settings
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON); // disable buffering      
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt); // apply new settings
-
-    int ch = getchar();
-
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // restore old settings
-    return ch;
+void sigterm_handler(int signum) {
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Interrupt signal (%d) received.", signum);
+    endwin();
+    rclcpp::shutdown();
+    exit(signum);
 }
