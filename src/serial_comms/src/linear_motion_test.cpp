@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 Pose3 current_pose{Vec3(140, 60, 40), RotationMatrix(Vec3(-M_PI_2, -M_PI, 0))};
 double claw_angle = 0.0;
 Angles angles{};
-double direction = 1.0;
+double direction = 3.0;
 
 const Limits limits = {
     {{0.0,       3*M_PI/2},
@@ -59,9 +59,9 @@ int main(int argc, char **argv) {
 
             last_updated = milliseconds;
             if (current_pose.pos.z > 200) {
-                direction = -1.0;
+                direction = -3.0;
             } else if (current_pose.pos.z < 40) {
-                direction = +1.0;
+                direction = +3.0;
             }
             
             current_pose.pos.z += direction;

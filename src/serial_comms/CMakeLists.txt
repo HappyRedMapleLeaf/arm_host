@@ -13,17 +13,21 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(arm_interfaces REQUIRED)
 find_package(Curses REQUIRED)
+find_package(geometry_msgs REQUIRED)
+
+add_executable(rviz_test src/rviz_test.cpp)
+ament_target_dependencies(rviz_test rclcpp geometry_msgs)
 
 add_executable(serial_setup src/serial_setup.cpp)
 ament_target_dependencies(serial_setup rclcpp)
 
-add_executable(read src/read.cpp)
+add_executable(read src/read.cpp ${LIB_SOURCES})
 ament_target_dependencies(read rclcpp)
 
 add_executable(write src/write.cpp)
 ament_target_dependencies(write rclcpp arm_interfaces)
 
-add_executable(key_teleop src/key_teleop.cpp  ${LIB_SOURCES})
+add_executable(key_teleop src/key_teleop.cpp ${LIB_SOURCES})
 ament_target_dependencies(key_teleop rclcpp arm_interfaces)
 target_link_libraries(key_teleop ${CURSES_LIBRARIES})
 
@@ -40,6 +44,7 @@ install(TARGETS
     key_teleop
     linear_motion_test
     servo_set
+    rviz_test
     DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

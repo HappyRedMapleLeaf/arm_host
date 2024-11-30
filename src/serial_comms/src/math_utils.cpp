@@ -18,6 +18,13 @@ Vec3 Vec3::operator-() {
 double Vec3::dot(Vec3 other) {
     return x*other.x + y*other.y + z*other.z;
 }
+Vec3 Vec3::cross(Vec3 other) {
+    return Vec3(
+        y*other.z - z*other.y,
+        z*other.x - x*other.z,
+        x*other.y - y*other.x
+    );
+}
 std::ostream& operator<<(std::ostream & os, const Vec3 & vec) {
     os << vec.x << " " << vec.y << " " << vec.z;
     return os;
@@ -32,6 +39,16 @@ Vec3 Mat3::getColumn(int i) {
 }
 Vec3 Mat3::getRow(int i) {
     return Vec3(data[i][0], data[i][1], data[i][2]);
+}
+void Mat3::setColumn(int i, Vec3 vec) {
+    this->data[0][i] = vec.x;
+    this->data[1][i] = vec.y;
+    this->data[2][i] = vec.z;
+}
+void Mat3::setRow(int i, Vec3 vec) {
+    this->data[i][0] = vec.x;
+    this->data[i][1] = vec.y;
+    this->data[i][2] = vec.z;
 }
 Mat3 Mat3::mul(Mat3 other) {
     std::array<std::array<double, 3>, 3> result{};

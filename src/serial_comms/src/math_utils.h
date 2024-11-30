@@ -16,6 +16,7 @@ class Vec3 {
         Vec3 operator*(double scalar);
         Vec3 operator-();
         double dot(Vec3 other);
+        Vec3 cross(Vec3 other);
 
         // https://learn.microsoft.com/en-us/cpp/standard-library/overloading-the-output-operator-for-your-own-classes?view=msvc-170
         friend std::ostream& operator<<(std::ostream & os, const Vec3 & vec);
@@ -34,6 +35,8 @@ class Mat3 {
 
         Vec3 getColumn(int i);
         Vec3 getRow(int i);
+        void setColumn(int i, Vec3 vec);
+        void setRow(int i, Vec3 vec);
         Mat3 mul(Mat3 other);
         Mat3 transpose();
 
