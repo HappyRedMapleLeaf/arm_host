@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Port opened");
     }
 
-    uint8_t read_buf[64];
+    uint8_t read_buf[32];
     memset(&read_buf, '\0', sizeof(read_buf));
     Pose3 pose{};
     
@@ -50,10 +50,18 @@ int main(int argc, char **argv) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), strerror(errno));
             return 1;
         } else if (n > 0) {
-            // std::array<double, 8> values{};
-            // for (int i = 0; i < 8; i++) {
-            //     std::memcpy(&values[i], read_buf + i*8, sizeof(double));
-            // }
+            std::array<float, 8> values{};
+            for (int i = 0; i < 8; i++) {
+                std::memcpy(&values[i], read_buf + i*sizeof(float), sizeof(float));
+            }
+
+            if (values[0] == 0) {
+                std::cout << "reset" << std::endl;
+            } else {
+                std::cout << values[1] << " " << values[2] << " " << values[3] << " " << values[4] << " " << values[5] << " " << values[6] << " " << values[7] << std::endl;
+            }
+
+            
 
             // pose.pos.x = values[0];
             // pose.pos.y = values[1];
@@ -65,7 +73,7 @@ int main(int argc, char **argv) {
             // pose.dir.setColumn(1, pose.dir.getColumn(2).cross(pose.dir.getColumn(0)));
 
             // std::cout << pose << std::endl << std::endl;
-            printf("%s\n", read_buf);
+            // printf("%s\n", read_buf);
         }
     }
 
