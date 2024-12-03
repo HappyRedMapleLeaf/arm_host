@@ -58,10 +58,10 @@ int main(int argc, char **argv) {
     tty.c_cc[VTIME] = 10; // 1s timeout
     tty.c_cc[VMIN] = 0;
 
-    // Set in/out baud rate to be 115200
-    // cfsetispeed(&tty, B115200);
-    // cfsetospeed(&tty, B115200);
-    cfsetspeed(&tty, B115200); // apparently only exists on some Linux systems. We ball
+    // Set in/out baud rate to be 230400
+    // cfsetispeed(&tty, B230400);
+    // cfsetospeed(&tty, B230400);
+    cfsetspeed(&tty, B230400); // apparently only exists on some Linux systems. We ball
    
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "flags set");
 

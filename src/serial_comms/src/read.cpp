@@ -43,40 +43,39 @@ int main(int argc, char **argv) {
     memset(&read_buf, '\0', sizeof(read_buf));
     Pose3 pose{};
     
-    for (;;) {
-        int n = read(serial_port, &read_buf, sizeof(read_buf));
-
-        if (n < 0) {
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), strerror(errno));
-            return 1;
-        } else if (n > 0) {
-            std::array<float, 8> values{};
-            for (int i = 0; i < 8; i++) {
-                std::memcpy(&values[i], read_buf + i*sizeof(float), sizeof(float));
+    while (rclcpp::ok()) {
+        uint32_t total_bytes_read = 0;
+        while (total_bytes_read < 32) {
+            int n = read(serial_port, read_buf + total_bytes_read, 32 - total_bytes_read);
+            if (n < 0) {
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), strerror(errno));
+                return 1;
             }
-
-            if (values[0] == 0) {
-                std::cout << "reset" << std::endl;
-            } else {
-                std::cout << values[1] << " " << values[2] << " " << values[3] << " " << values[4] << " " << values[5] << " " << values[6] << " " << values[7] << std::endl;
-            }
-
-            
-
-            // pose.pos.x = values[0];
-            // pose.pos.y = values[1];
-            // pose.pos.z = values[2];
-
-            // pose.dir.setColumn(2, Vec3(values[3], values[4], values[5]));
-            // pose.dir.setColumn(0, Vec3(values[6], values[7], 0));
-            // pose.dir[2][0] = pose.dir.getColumn(0).dot(pose.dir.getColumn(2)) / -values[5];
-            // pose.dir.setColumn(1, pose.dir.getColumn(2).cross(pose.dir.getColumn(0)));
-
-            // std::cout << pose << std::endl << std::endl;
-            // printf("%s\n", read_buf);
+            total_bytes_read += n;
         }
+        std::array<float, 8> values{};
+        std::memcpy(values.data(), read_buf, sizeof(read_buf));
+
+        if (values[0] == 0) {
+            std::cout << "reset" << std::endl;
+        } else {
+            std::cout << values[1] << " " << values[2] << " " << values[3] << " " << values[4] << " " << values[5] << " " << values[6] << " " << values[7] << std::endl;
+        }
+
+        // pose.pos.x = values[0];
+        // pose.pos.y = values[1];
+        // pose.pos.z = values[2];
+
+        // pose.dir.setColumn(2, Vec3(values[3], values[4], values[5]));
+        // pose.dir.setColumn(0, Vec3(values[6], values[7], 0));
+        // pose.dir[2][0] = pose.dir.getColumn(0).dot(pose.dir.getColumn(2)) / -values[5];
+        // pose.dir.setColumn(1, pose.dir.getColumn(2).cross(pose.dir.getColumn(0)));
+
+        // std::cout << pose << std::endl << std::endl;
+        // printf("%s\n", read_buf);
     }
 
     rclcpp::shutdown();
+    close(serial_port);
     return 0;
 }
