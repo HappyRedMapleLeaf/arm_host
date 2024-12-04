@@ -22,7 +22,7 @@ add_executable(serial_setup src/serial_setup.cpp)
 ament_target_dependencies(serial_setup rclcpp)
 
 add_executable(read src/read.cpp ${LIB_SOURCES})
-ament_target_dependencies(read rclcpp)
+ament_target_dependencies(read rclcpp geometry_msgs)
 
 add_executable(write src/write.cpp)
 ament_target_dependencies(write rclcpp arm_interfaces)

@@ -1,4 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include <cstdlib>
 #include <memory>
@@ -30,6 +31,7 @@ int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
 
     std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("read");
+    auto publisher = node->create_publisher<geometry_msgs::msg::PoseStamped>("/Pose1", 5);
     
     serial_port = open("/dev/ttyACM0", O_RDWR);
 
@@ -39,40 +41,78 @@ int main(int argc, char **argv) {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Port opened");
     }
 
-    uint8_t read_buf[32];
+    const uint8_t MSG_SZ = 32;
+
+    uint8_t temp_read[MSG_SZ];
+    while (read(serial_port, temp_read, MSG_SZ) > 0) {}
+
+    uint8_t read_buf[MSG_SZ];
     memset(&read_buf, '\0', sizeof(read_buf));
     Pose3 pose{};
-    
+
+    uint8_t zeros = 0;
+
+    // std::cout << "starting" << std::endl;
     while (rclcpp::ok()) {
-        uint32_t total_bytes_read = 0;
-        while (total_bytes_read < 32) {
-            int n = read(serial_port, read_buf + total_bytes_read, 32 - total_bytes_read);
+        // std::cout << "bigloop" << std::endl;
+        // I'm 99% sure there's a bug in this logic but it works for now lol
+        uint8_t total_bytes_read = 0;
+        while (total_bytes_read < MSG_SZ) {
+            // read as much as possible into temp_read
+            int n = read(serial_port, temp_read, MSG_SZ - total_bytes_read);
             if (n < 0) {
                 RCLCPP_INFO(rclcpp::get_logger("rclcpp"), strerror(errno));
                 return 1;
             }
-            total_bytes_read += n;
+
+            uint8_t copy_start = 0;
+            
+            for (uint8_t i = 0; i < n; i++) {
+                if (zeros == MSG_SZ) {
+                    zeros = 0;
+                    copy_start = i;
+                    break;
+                }
+                if (read_buf[i] == 0) {
+                    zeros++;
+                } else {
+                    zeros = 0;
+                }
+            }
+
+            memcpy(read_buf + total_bytes_read, temp_read + copy_start, n - copy_start);
+            total_bytes_read += n - copy_start;
+            // std::cout << "loop " << total_bytes_read << " " << n << " " << zeros << " " << copy_start << std::endl;
         }
+
+        if (read_buf[0] == 0){
+            std::cout << "reset" << std::endl;
+            continue;
+        }
+
+        if (read_buf[1] != 0xE1) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "No IMU Reading: %d", read_buf[1]);
+            continue;
+        }
+
         std::array<float, 8> values{};
         std::memcpy(values.data(), read_buf, sizeof(read_buf));
 
-        if (values[0] == 0) {
-            std::cout << "reset" << std::endl;
-        } else {
-            std::cout << values[1] << " " << values[2] << " " << values[3] << " " << values[4] << " " << values[5] << " " << values[6] << " " << values[7] << std::endl;
-        }
+        // std::cout << values[1] << " " << values[2] << " " << values[3] << " " << values[4] << " " << values[5] << " " << values[6] << " " << values[7] << std::endl;
+        geometry_msgs::msg::PoseStamped pose;
+        pose.header.frame_id = "map";
+        pose.pose.position.x = 0.0;
+        pose.pose.position.y = 0.0;
+        pose.pose.position.z = 0.0;
+        pose.pose.orientation.x = values[4];
+        pose.pose.orientation.y = values[5];
+        pose.pose.orientation.z = values[6];
+        pose.pose.orientation.w = values[7];
+        pose.header.stamp = node->now();
 
-        // pose.pos.x = values[0];
-        // pose.pos.y = values[1];
-        // pose.pos.z = values[2];
-
-        // pose.dir.setColumn(2, Vec3(values[3], values[4], values[5]));
-        // pose.dir.setColumn(0, Vec3(values[6], values[7], 0));
-        // pose.dir[2][0] = pose.dir.getColumn(0).dot(pose.dir.getColumn(2)) / -values[5];
-        // pose.dir.setColumn(1, pose.dir.getColumn(2).cross(pose.dir.getColumn(0)));
-
-        // std::cout << pose << std::endl << std::endl;
-        // printf("%s\n", read_buf);
+        publisher->publish(pose);
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Published [%f %f %f %f]", values[4], values[5], values[6], values[7]);
+        rclcpp::spin_some(node);
     }
 
     rclcpp::shutdown();
