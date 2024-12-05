@@ -110,15 +110,15 @@ int main(int argc, char **argv) {
 
         std::array<float, 8> values{};
         std::memcpy(values.data(), read_buf, sizeof(read_buf));
-        uint64_t us;
-        std::memcpy(&us, read_buf + 4, sizeof(uint64_t));
+        // uint64_t us;
+        // std::memcpy(&us, read_buf + 4, sizeof(uint64_t));
 
         // std::cout << values[1] << " " << values[2] << " " << values[3] << " " << values[4] << " " << values[5] << " " << values[6] << " " << values[7] << std::endl;
         geometry_msgs::msg::PoseStamped pose;
         pose.header.frame_id = "map";
-        pose.pose.position.x = 0.0;
-        pose.pose.position.y = 0.0;
-        pose.pose.position.z = 0.0;
+        pose.pose.position.x = values[1];
+        pose.pose.position.y = values[2];
+        pose.pose.position.z = values[3];
         pose.pose.orientation.x = values[4];
         pose.pose.orientation.y = values[5];
         pose.pose.orientation.z = values[6];
@@ -126,7 +126,8 @@ int main(int argc, char **argv) {
         pose.header.stamp = node->now();
 
         publisher->publish(pose);
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "us: %d Published [%f %f %f %f]", (int)us, values[4], values[5], values[6], values[7]);
+        // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "us: %d Published [%f %f %f %f]", (int)us, values[4], values[5], values[6], values[7]);
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f %f]", values[1] / 10000, values[2] / 10000, values[3] / 10000, values[4], values[5], values[6], values[7]);
         rclcpp::spin_some(node);
     }
 
