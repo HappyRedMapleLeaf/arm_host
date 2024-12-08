@@ -103,15 +103,10 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        if (read_buf[1] != 0xE1) {
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "No IMU Reading: %d", read_buf[1]);
-            continue;
-        }
-
         std::array<float, 8> values{};
         std::memcpy(values.data(), read_buf, sizeof(read_buf));
-        // uint64_t us;
-        // std::memcpy(&us, read_buf + 4, sizeof(uint64_t));
+        int32_t us;
+        std::memcpy(&us, read_buf + 4, sizeof(int32_t));
 
         // std::cout << values[1] << " " << values[2] << " " << values[3] << " " << values[4] << " " << values[5] << " " << values[6] << " " << values[7] << std::endl;
         geometry_msgs::msg::PoseStamped pose;
@@ -126,8 +121,8 @@ int main(int argc, char **argv) {
         pose.header.stamp = node->now();
 
         publisher->publish(pose);
-        // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "us: %d Published [%f %f %f %f]", (int)us, values[4], values[5], values[6], values[7]);
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f %f]", values[1] / 10000, values[2] / 10000, values[3] / 10000, values[4], values[5], values[6], values[7]);
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "us: %d Published [%f %f %f %f]", (int)us, values[4], values[5], values[6], values[7]);
+        // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f %f]", values[1] / 10000, values[2] / 10000, values[3] / 10000, values[4], values[5], values[6], values[7]);
         rclcpp::spin_some(node);
     }
 

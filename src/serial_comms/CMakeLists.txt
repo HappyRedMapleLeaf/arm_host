@@ -24,6 +24,9 @@ ament_target_dependencies(serial_setup rclcpp)
 add_executable(read src/read.cpp ${LIB_SOURCES})
 ament_target_dependencies(read rclcpp geometry_msgs)
 
+add_executable(read_debug src/read_debug.cpp ${LIB_SOURCES})
+ament_target_dependencies(read_debug rclcpp geometry_msgs)
+
 add_executable(write src/write.cpp)
 ament_target_dependencies(write rclcpp arm_interfaces)
 
@@ -40,6 +43,7 @@ ament_target_dependencies(servo_set rclcpp arm_interfaces)
 install(TARGETS
     serial_setup
     read
+    read_debug
     write
     key_teleop
     linear_motion_test

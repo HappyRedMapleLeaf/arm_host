@@ -6,9 +6,14 @@ https://learn.microsoft.com/en-us/windows/wsl/connect-usb
 3. `usbipd bind --busid <busid>`
 4. `usbipd attach --wsl --busid <busid>` (on the second, etc. time around, if plugged into the same port, you just have to do this)
 5. verify in wsl that it's there by running `lsusb`
-6. detatch with `usbipd detach --busid <busid>` in powershell
+6. remember to  `ros2 run serial_comms serial_setup`
+7. detatch with `usbipd detach --busid <busid>` in powershell
 
 Sometimes the device randomly detaches itself but it still shows up with `lsusb`, and shows up twice if re-attached. Just `wsl --shutdown` if this happens. Not sure why it does.
+
+## Flashing code
+I like keeping my project on the windows side so that I can use the CubeIDE if I really want to, and so I build on Windows as well with `cd Release; make all`
+However I want to keep the usb connection on the WSL side when pushing code so I do that with OpenOCD. Change the elf path in `flash.sh` and run it.
 
 ## Using the `serial_comms` ROS2 package
 `serial_setup` node runs once and sets up usb device for proper communication
