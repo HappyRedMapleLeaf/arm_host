@@ -41,13 +41,13 @@ int main(int argc, char **argv) {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Port opened");
     }
 
-    const uint8_t MSG_SZ = 32;
-    uint8_t temp_read[MSG_SZ];
+    const uint8_t MSG_LEN = 48;
+    uint8_t temp_read[MSG_LEN];
     uint8_t zeros = 0;
     uint32_t reset_wait_count = 0;
 
-    while (zeros < MSG_SZ) {
-        if (reset_wait_count % MSG_SZ == 0) {
+    while (zeros < MSG_LEN) {
+        if (reset_wait_count % MSG_LEN == 0) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "waiting for reset...");
         }
         reset_wait_count++;
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     }
     zeros = 0;
 
-    uint8_t read_buf[MSG_SZ];
+    uint8_t read_buf[MSG_LEN];
     memset(&read_buf, '\0', sizeof(read_buf));
     Pose3 pose{};
 
@@ -70,9 +70,9 @@ int main(int argc, char **argv) {
         // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "bigloop");
         // I'm 99% sure there's a bug in this logic but it works for now lol
         uint8_t total_bytes_read = 0;
-        while (total_bytes_read < MSG_SZ) {
+        while (total_bytes_read < MSG_LEN) {
             // read as much as possible into temp_read
-            int n = read(serial_port, temp_read, MSG_SZ - total_bytes_read);
+            int n = read(serial_port, temp_read, MSG_LEN - total_bytes_read);
             if (n < 0) {
                 // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), strerror(errno));
                 return 1;
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
             uint8_t copy_start = 0;
             
             for (uint8_t i = 0; i < n; i++) {
-                if (zeros == MSG_SZ) {
+                if (zeros == MSG_LEN) {
                     zeros = 0;
                     copy_start = i;
                     break;
@@ -103,26 +103,30 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        std::array<float, 8> values{};
-        std::memcpy(values.data(), read_buf, sizeof(read_buf));
-        int32_t us;
-        std::memcpy(&us, read_buf + 4, sizeof(int32_t));
+        std::array<float, MSG_LEN / 4 - 1> values{};
+        std::memcpy(values.data(), read_buf + 2, sizeof(read_buf));
+        // int32_t us;
+        // std::memcpy(&us, read_buf + 4, sizeof(int32_t));
 
-        // std::cout << values[1] << " " << values[2] << " " << values[3] << " " << values[4] << " " << values[5] << " " << values[6] << " " << values[7] << std::endl;
+        // values[1] /= 10000;
+        // values[2] /= 10000;
+        // values[3] /= 10000;
+
         geometry_msgs::msg::PoseStamped pose;
         pose.header.frame_id = "map";
-        pose.pose.position.x = values[1];
-        pose.pose.position.y = values[2];
-        pose.pose.position.z = values[3];
-        pose.pose.orientation.x = values[4];
-        pose.pose.orientation.y = values[5];
-        pose.pose.orientation.z = values[6];
-        pose.pose.orientation.w = values[7];
+        pose.pose.position.x = 0;
+        pose.pose.position.y = 0;
+        pose.pose.position.z = 0;
+        pose.pose.orientation.x = values[3];
+        pose.pose.orientation.y = values[4];
+        pose.pose.orientation.z = values[5];
+        pose.pose.orientation.w = values[6];
         pose.header.stamp = node->now();
 
         publisher->publish(pose);
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "us: %d Published [%f %f %f %f]", (int)us, values[4], values[5], values[6], values[7]);
-        // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f %f]", values[1] / 10000, values[2] / 10000, values[3] / 10000, values[4], values[5], values[6], values[7]);
+        // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "us: %d Published [%f %f %f %f]", (int)us, values[4], values[5], values[6]);
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f %f]", values[0], values[1], values[2], values[3], values[4], values[5], values[6]);
+        // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f] [%f %f %f] [%f %f]", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10]);
         rclcpp::spin_some(node);
     }
 

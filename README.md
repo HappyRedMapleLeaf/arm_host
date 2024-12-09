@@ -12,7 +12,7 @@ https://learn.microsoft.com/en-us/windows/wsl/connect-usb
 Sometimes the device randomly detaches itself but it still shows up with `lsusb`, and shows up twice if re-attached. Just `wsl --shutdown` if this happens. Not sure why it does.
 
 ## Flashing code
-I like keeping my project on the windows side so that I can use the CubeIDE if I really want to, and so I build on Windows as well with `cd Release; make all`
+I like keeping my project on the windows side so that I can use the CubeIDE if I really want to, and so I build on Windows as well with `cd Release; make -j16 all`
 However I want to keep the usb connection on the WSL side when pushing code so I do that with OpenOCD. Change the elf path in `flash.sh` and run it.
 
 ## Using the `serial_comms` ROS2 package
