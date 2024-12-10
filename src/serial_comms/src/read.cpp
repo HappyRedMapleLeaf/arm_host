@@ -15,6 +15,7 @@
 #include <csignal>
 
 #include "math_utils.h"
+#include "serial_setup.h"
 
 int serial_port;
 
@@ -40,6 +41,8 @@ int main(int argc, char **argv) {
     } else {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Port opened");
     }
+
+    serial_setup(serial_port);
 
     const uint8_t MSG_LEN = 48;
     uint8_t temp_read[MSG_LEN];
@@ -108,15 +111,15 @@ int main(int argc, char **argv) {
         // int32_t us;
         // std::memcpy(&us, read_buf + 4, sizeof(int32_t));
 
-        // values[1] /= 10000;
-        // values[2] /= 10000;
-        // values[3] /= 10000;
+        values[0] /= 100;
+        values[1] /= 100;
+        values[2] /= 100;
 
         geometry_msgs::msg::PoseStamped pose;
         pose.header.frame_id = "map";
-        pose.pose.position.x = 0;
-        pose.pose.position.y = 0;
-        pose.pose.position.z = 0;
+        pose.pose.position.x = values[0];
+        pose.pose.position.y = values[1];
+        pose.pose.position.z = values[2];
         pose.pose.orientation.x = values[3];
         pose.pose.orientation.y = values[4];
         pose.pose.orientation.z = values[5];
@@ -125,7 +128,7 @@ int main(int argc, char **argv) {
 
         publisher->publish(pose);
         // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "us: %d Published [%f %f %f %f]", (int)us, values[4], values[5], values[6]);
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f %f]", values[0], values[1], values[2], values[3], values[4], values[5], values[6]);
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f %f] [%f %f %f]", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9]);
         // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "[%f %f %f] [%f %f %f] [%f %f %f] [%f %f]", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10]);
         rclcpp::spin_some(node);
     }

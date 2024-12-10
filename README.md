@@ -13,7 +13,7 @@ Sometimes the device randomly detaches itself but it still shows up with `lsusb`
 
 ## Flashing code
 I like keeping my project on the windows side so that I can use the CubeIDE if I really want to, and so I build on Windows as well with `cd Release; make -j16 all`
-However I want to keep the usb connection on the WSL side when pushing code so I do that with OpenOCD. Change the elf path in `flash.sh` and run it.
+However I want to keep the usb connection on the WSL side when pushing code so I do that with OpenOCD. See run.bat file in arm_controller repo.
 
 ## Using the `serial_comms` ROS2 package
 `serial_setup` node runs once and sets up usb device for proper communication
@@ -29,6 +29,9 @@ Added .vscode directory since intellisense was giving some problems and the curr
 `ros2 run serial_comms read` to print output from stm
 `ros2 run serial_comms write` to write whenever requested
 `ros2 run serial_comms servo_set` to set servo position with keyboard
+
+## Setting up RViz
+`ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map world`
 
 ## Dependencies
 sudo apt-get install libncurses5-dev libncursesw5-dev

@@ -15,6 +15,7 @@
 #include <csignal>
 
 #include "math_utils.h"
+#include "serial_setup.h"
 
 int serial_port;
 
@@ -35,6 +36,8 @@ int main() {
     } else {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Port opened");
     }
+
+    serial_setup(serial_port);
 
     uint8_t msg;
 

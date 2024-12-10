@@ -1,32 +1,10 @@
 #include "rclcpp/rclcpp.hpp"
 
-#include <cstdlib>
-#include <memory>
-
-#include <stdio.h>
-#include <string.h>
-
-#include <fcntl.h>
 #include <errno.h>
 #include <termios.h>
 #include <unistd.h>
 
-int serial_port;
-
-int main(int argc, char **argv) {
-    rclcpp::init(argc, argv);
-
-    std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("serial_setup");
-    
-    serial_port = open("/dev/ttyACM0", O_RDWR);
-
-    // Check for errors
-    if (serial_port < 0) {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Error %i from open: %s", errno, strerror(errno));
-    } else {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Port opened");
-    }
-    
+void serial_setup(int serial_port) {
     struct termios tty;
 
     // Read in existing settings, and handle any error
@@ -71,7 +49,4 @@ int main(int argc, char **argv) {
     }
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "flags saved");
-
-    rclcpp::shutdown();
-    return 0;
 }

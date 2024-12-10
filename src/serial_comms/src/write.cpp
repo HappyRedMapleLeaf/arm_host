@@ -1,5 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "arm_interfaces/srv/servo_update.hpp"
+#include "serial_setup.h"
 
 #include <cstdlib>
 #include <memory>
@@ -57,6 +58,8 @@ int main(int argc, char **argv) {
     } else {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Port opened");
     }
+
+    serial_setup(serial_port);
 
     std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("write");
 
