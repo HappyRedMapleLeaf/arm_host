@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(serial_comms)
+project(arm)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -21,6 +21,9 @@ ament_target_dependencies(rviz_test rclcpp geometry_msgs)
 add_executable(read src/read.cpp ${LIB_SOURCES})
 ament_target_dependencies(read rclcpp geometry_msgs)
 
+add_executable(read_string src/read_string.cpp ${LIB_SOURCES})
+ament_target_dependencies(read_string rclcpp geometry_msgs)
+
 add_executable(read_debug src/read_debug.cpp ${LIB_SOURCES})
 ament_target_dependencies(read_debug rclcpp geometry_msgs)
 
@@ -34,15 +37,20 @@ target_link_libraries(key_teleop ${CURSES_LIBRARIES})
 add_executable(linear_motion_test src/linear_motion_test.cpp  ${LIB_SOURCES})
 ament_target_dependencies(linear_motion_test rclcpp arm_interfaces)
 
+add_executable(pen_circle_demo src/pen_circle_demo.cpp  ${LIB_SOURCES})
+ament_target_dependencies(pen_circle_demo rclcpp arm_interfaces)
+
 add_executable(servo_set src/servo_set.cpp)
 ament_target_dependencies(servo_set rclcpp arm_interfaces)
 
 install(TARGETS
     read
+    read_string
     read_debug
     write
     key_teleop
     linear_motion_test
+    pen_circle_demo
     servo_set
     rviz_test
     DESTINATION lib/${PROJECT_NAME})

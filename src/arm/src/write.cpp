@@ -2,20 +2,17 @@
 #include "arm_interfaces/srv/servo_update.hpp"
 #include "serial_setup.h"
 
+#include <chrono>
+#include <csignal>
 #include <cstdlib>
+#include <errno.h>
+#include <fcntl.h>
+#include <map>
 #include <memory>
-
 #include <stdio.h>
 #include <string.h>
-
-#include <fcntl.h>
-#include <errno.h>
 #include <termios.h>
 #include <unistd.h>
-
-#include <csignal>
-
-#include <chrono>
 
 using namespace std::chrono_literals;
 

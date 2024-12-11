@@ -103,10 +103,9 @@ int main(int argc, char **argv) {
             }
 
             if (changed) {
-                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "New xyz: [%f, %f, %f]", 
-                //     current_pose.pos.x, current_pose.pos.y, current_pose.pos.z
-                // );
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "c");
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "New xyz: [%f, %f, %f] Claw: %f", 
+                    current_pose.pos.x, current_pose.pos.y, current_pose.pos.z, claw_angle
+                );
             }
 
             claw_angle = std::clamp(claw_angle, -M_PI_2, M_PI_2);

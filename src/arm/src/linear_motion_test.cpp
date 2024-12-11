@@ -1,23 +1,23 @@
 #include "rclcpp/rclcpp.hpp"
 #include "arm_interfaces/srv/servo_update.hpp"
-
+#include "serial_setup.h"
 #include "kinematics.h"
 
+#include <chrono>
+#include <csignal>
 #include <cstdlib>
+#include <errno.h>
+#include <fcntl.h>
+#include <map>
 #include <memory>
 #include <stdio.h>
 #include <string.h>
-
-#include <unistd.h>
 #include <termios.h>
+#include <unistd.h>
 
-#include <csignal>
-
-#include <map>
-
-#include <chrono>
 using namespace std::chrono_literals;
 
+int serial_port;
 Pose3 current_pose{Vec3(140, 60, 40), RotationMatrix(Vec3(-M_PI_2, -M_PI, 0))};
 double claw_angle = 0.0;
 Angles angles{};
@@ -32,29 +32,33 @@ const Limits limits = {
      {-M_PI_2,   M_PI_2}}
 };
 
-void sigterm_handler(int signum) {
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Interrupt signal (%d) received.", signum);
-    rclcpp::shutdown();
-    exit(signum);
-}
-
+void sigterm_handler(int signum);
 int main(int argc, char **argv);
 
 int main(int argc, char **argv) {
     signal(SIGINT, sigterm_handler);
 
     rclcpp::init(argc, argv);
+    
+    serial_port = open("/dev/ttyACM0", O_RDWR);
 
-    std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("key_teleop");
-    rclcpp::Client<arm_interfaces::srv::ServoUpdate>::SharedPtr client =
-    node->create_client<arm_interfaces::srv::ServoUpdate>("servo_set_srv");
+    // Check for errors
+    if (serial_port < 0) {
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Error %i from open: %s", errno, strerror(errno));
+    } else {
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Port opened");
+    }
+
+    serial_setup(serial_port);
+
+    std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("linear_motion_test");
 
     uint64_t last_updated = node->now().nanoseconds() / 1000000;
     
     while (rclcpp::ok()) {
         uint64_t milliseconds = node->now().nanoseconds() / 1000000;
 
-        if (milliseconds - last_updated > 10) {
+        if (milliseconds - last_updated > 20) {
             Pose3 oldpose = current_pose;
 
             last_updated = milliseconds;
@@ -73,34 +77,29 @@ int main(int argc, char **argv) {
                 current_pose = oldpose;
                 continue;
             }
+            
+            double write_data[8];
 
-            auto request = std::make_shared<arm_interfaces::srv::ServoUpdate::Request>();
+            // send command 1 to set servo angles
+            uint64_t command = 0x01UL;
+            std::memcpy(&write_data[0], &command, sizeof(command));
 
             for (int i = 0; i < 6; i++) {
-                request->servo_angles[i] = angles[i];
+                write_data[i+1] = angles[i];
             }
-            request->servo_angles[6] = claw_angle;
+            write_data[7] = claw_angle;
 
-            while (!client->wait_for_service(20ms)) {
-                if (!rclcpp::ok()) {
-                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-                    return 0;
-                }
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
-            }
-
-            auto result = client->async_send_request(request);
-            // Wait for the result.
-            if (rclcpp::spin_until_future_complete(node, result) ==
-                rclcpp::FutureReturnCode::SUCCESS)
-            {
-                auto result_data = result.get();
-            } else {
-                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service write_server");
-            }
+            write(serial_port, write_data, 64);
         }
     }
 
     rclcpp::shutdown();
     return 0;
+}
+
+void sigterm_handler(int signum) {
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Interrupt signal (%d) received.", signum);
+    close(serial_port);
+    rclcpp::shutdown();
+    exit(signum);
 }
