@@ -1,3 +1,7 @@
+# 6-DoF Robotic Arm
+CAD model: https://cad.onshape.com/documents/d175cfba8c5d4ae27a45d049/w/a8aabf4aba7d96b5d1940263/e/2a6d12fba3b1e6f881d490c6?renderMode=0&uiState=68be1bcd6a444076af88664f \
+This project has two repositories. This one runs on a host computer. The other, arm_controller, runs on the STM32 microcontroller that the servos are connected to. The connection between the host and the controller is through the USB cable that connects to the J-Link on the STM Nucleo board. The communication uses UART and is seen as a COM port on the host side. This readme is mostly a 'note to self' for if I ever decide to come back to it.
+
 ## Setting Up USB Connection for WSL2
 https://learn.microsoft.com/en-us/windows/wsl/connect-usb
 0. connect stm32
